@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.devora.core.common.result.DevoraResult
+import dev.devora.core.ui.snackbar.DevoraSnackbarController
+import dev.devora.core.ui.snackbar.DevoraSnackbarSeverity
 import dev.devora.feature.apkinspector.domain.usecase.InspectAabUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,13 +16,13 @@ import javax.inject.Inject
 
 data class AabInspectorUiState(
     val isLoading: Boolean = false,
-    val lines: List<String> = emptyList(),
-    val errorMessage: String? = null
+    val lines: List<String> = emptyList()
 )
 
 @HiltViewModel
 class AabInspectorViewModel @Inject constructor(
-    private val inspectAabUseCase: InspectAabUseCase
+    private val inspectAabUseCase: InspectAabUseCase,
+    private val snackbarController: DevoraSnackbarController
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AabInspectorUiState())
@@ -32,11 +34,9 @@ class AabInspectorViewModel @Inject constructor(
             val result = inspectAabUseCase(aabFilePath) { line ->
                 _uiState.update { it.copy(lines = it.lines + line) }
             }
-            _uiState.update { current ->
-                when (result) {
-                    is DevoraResult.Success -> current.copy(isLoading = false)
-                    is DevoraResult.Failure -> current.copy(isLoading = false, errorMessage = result.message)
-                }
+            _uiState.update { it.copy(isLoading = false) }
+            if (result is DevoraResult.Failure) {
+                snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }

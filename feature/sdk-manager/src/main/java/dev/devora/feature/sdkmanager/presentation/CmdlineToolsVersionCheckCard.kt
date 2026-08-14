@@ -37,9 +37,6 @@ fun CmdlineToolsVersionCheckCard(viewModel: CmdlineToolsVersionCheckViewModel = 
             }
 
             uiState.appliedMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
 
             TextButton(onClick = { viewModel.checkForUpdate() }, enabled = !uiState.isChecking) {
                 Text(if (uiState.isChecking) "Checking..." else "Check for update")

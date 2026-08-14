@@ -14,8 +14,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.devora.core.ui.theme.DevoraSpacing
 
 @Composable
 fun EnvironmentManagerScreen(
@@ -31,12 +31,11 @@ fun EnvironmentManagerScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Environment — $workflowId") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(DevoraSpacing.md)) {
             uiState.info?.let { info ->
                 if (!info.isIsolated) {
                     Text(
-                        "This device is using the Termux app engine, which cannot provide " +
-                            "per-workflow isolation. All workflows share the same Termux environment.",
+                        "This device is using the Termux app engine, which cannot provide per-workflow isolation.",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -45,7 +44,7 @@ fun EnvironmentManagerScreen(
                     Text("Bootstrap version: ${info.installedBootstrapVersion ?: "not installed"}")
                     Text("Storage: %.1f MB".format(info.storageSizeBytes / (1024.0 * 1024.0)))
 
-                    Row(modifier = Modifier.padding(top = 16.dp)) {
+                    Row(modifier = Modifier.padding(top = DevoraSpacing.md)) {
                         Button(
                             onClick = { viewModel.reset(workflowId) },
                             enabled = !uiState.isBusy
@@ -56,9 +55,6 @@ fun EnvironmentManagerScreen(
                         ) { Text("Delete Environment") }
                     }
                 }
-            }
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
             }
         }
     }

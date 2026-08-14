@@ -6,15 +6,19 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.devora.feature.notifications.domain.usecase.PostWorkflowNotificationUseCase
 import dev.devora.feature.terminal.domain.engine.TerminalEngineSelector
 import dev.devora.feature.terminal.domain.execution.CommandExecutionEngineProvider
 import dev.devora.feature.terminal.domain.execution.EnginePaths
 import dev.devora.feature.workflowengine.data.ActionYamlParser
 import dev.devora.feature.workflowengine.data.LocalActionResolver
+import dev.devora.feature.workflowengine.data.WorkflowPermissionStore
 import dev.devora.feature.workflowengine.data.WorkflowYamlParser
 import dev.devora.feature.workflowengine.data.repository.DefaultWorkflowEnvironmentRepository
+import dev.devora.feature.workflowengine.data.repository.DefaultWorkflowPermissionRepository
 import dev.devora.feature.workflowengine.data.repository.DefaultWorkflowRepository
 import dev.devora.feature.workflowengine.domain.repository.WorkflowEnvironmentRepository
+import dev.devora.feature.workflowengine.domain.repository.WorkflowPermissionRepository
 import dev.devora.feature.workflowengine.domain.repository.WorkflowRepository
 import java.io.File
 import javax.inject.Singleton
@@ -47,24 +51,6 @@ object WorkflowEngineModule {
 
     @Provides
     @Singleton
-    fun provideWorkflowRepository(
-        parser: WorkflowYamlParser,
-        environmentRepository: WorkflowEnvironmentRepository,
-        enginePaths: EnginePaths,
-        localActionResolver: LocalActionResolver,
-        permissionRepository: WorkflowPermissionRepository,
-        @ApplicationContext context: Context
-    ): WorkflowRepository = DefaultWorkflowRepository(
-        parser,
-        environmentRepository,
-        enginePaths,
-        File(context.filesDir, "devora/artifact_staging"),
-        localActionResolver,
-        premissionRepository
-    )
-
-    @Provides
-    @Singleton
     fun provideWorkflowPermissionStore(@ApplicationContext context: Context): WorkflowPermissionStore =
         WorkflowPermissionStore(File(context.filesDir, "devora/workflow_permissions.json"))
 
@@ -73,4 +59,24 @@ object WorkflowEngineModule {
     fun provideWorkflowPermissionRepository(
         store: WorkflowPermissionStore
     ): WorkflowPermissionRepository = DefaultWorkflowPermissionRepository(store)
+
+    @Provides
+    @Singleton
+    fun provideWorkflowRepository(
+        parser: WorkflowYamlParser,
+        environmentRepository: WorkflowEnvironmentRepository,
+        enginePaths: EnginePaths,
+        localActionResolver: LocalActionResolver,
+        permissionRepository: WorkflowPermissionRepository,
+        postNotificationUseCase: PostWorkflowNotificationUseCase,
+        @ApplicationContext context: Context
+    ): WorkflowRepository = DefaultWorkflowRepository(
+        parser,
+        environmentRepository,
+        enginePaths,
+        File(context.filesDir, "devora/artifact_staging"),
+        localActionResolver,
+        permissionRepository,
+        postNotificationUseCase
+    )
 }

@@ -12,7 +12,7 @@ package dev.devora.feature.github.data
  * This ID is public by design (it identifies the app, not a secret).
  */
 object GitHubOAuthContract {
-    const val CLIENT_ID = "REPLACE_WITH_YOUR_GITHUB_OAUTH_APP_CLIENT_ID"
+    const val CLIENT_ID = "Ov23li3OojldMhM4scYh"
 
     const val DEVICE_CODE_URL = "https://github.com/login/device/code"
     const val TOKEN_URL = "https://github.com/login/oauth/access_token"

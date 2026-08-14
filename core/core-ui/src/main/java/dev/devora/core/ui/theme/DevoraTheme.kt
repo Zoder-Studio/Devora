@@ -32,6 +32,7 @@ fun DevoraTheme(
     val colorScheme = if (useDarkTheme) DevoraDarkColorScheme else DevoraLightColorScheme
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = DevoraTypography,
         content = content
     )
 }

@@ -24,6 +24,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.devora.core.ui.components.DevoraEmptyState
+import dev.devora.core.ui.theme.DevoraSpacing
 import dev.devora.feature.git.domain.model.GitFileChange
 
 @Composable
@@ -45,17 +47,19 @@ fun GitScreen(
             uiState.status?.let { status ->
                 Text("Branch: ${status.branch ?: "detached"} (+${status.ahead}/-${status.behind})", style = MaterialTheme.typography.titleSmall)
             }
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
-            }
 
-            LazyColumn(modifier = Modifier.padding(top = 8.dp).fillMaxWidth()) {
-                items(uiState.status?.changes ?: emptyList()) { change ->
-                    ChangeRow(
-                        change = change,
-                        onStage = { viewModel.stage(change.path) },
-                        onUnstage = { viewModel.unstage(change.path) }
-                    )
+            val changes = uiState.status?.changes ?: emptyList()
+            if (changes.isEmpty()) {
+                DevoraEmptyState("No changes.")   // ← DIBUNGKUS pakai DevoraEmptyState
+            } else {
+                LazyColumn(modifier = Modifier.padding(top = DevoraSpacing.sm).fillMaxWidth()) {
+                    items(changes) { change ->
+                        ChangeRow(
+                            change = change,
+                            onStage = { viewModel.stage(change.path) },
+                            onUnstage = { viewModel.unstage(change.path) }
+                        )
+                    }
                 }
             }
 
@@ -63,7 +67,7 @@ fun GitScreen(
                 value = commitMessage,
                 onValueChange = { commitMessage = it },
                 label = { Text("Commit message") },
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = DevoraSpacing.md)
             )
             Row {
                 Button(onClick = { viewModel.commit(commitMessage) }, enabled = !uiState.isBusy) {
@@ -77,7 +81,7 @@ fun GitScreen(
                 }
             }
 
-            LazyColumn(modifier = Modifier.padding(top = 12.dp)) {
+            LazyColumn(modifier = Modifier.padding(top = DevoraSpacing.md)) {
                 items(uiState.outputLines) { line -> Text(line, style = MaterialTheme.typography.bodySmall) }
             }
         }

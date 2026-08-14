@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Download unreleased APK from Build Debug workflow
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: build.yml
+          commit: ${{ github.sha }}
+          name: unreleased-apk
+          path: apk
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install build-tools (zipalign, apksigner)
+        run: sdkmanager "build-tools;35.0.0"
+
+      - name: Determine tag for this commit
+        id: get_tag
+        run: |
+          TAG=$(git tag --points-at "${{ github.event.workflow_run.head_sha }}" | grep '^v' | head -n 1)
+          if [ -z "$TAG" ]; then
+            echo "No version tag found on this commit. Skipping release."
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found tag: $TAG"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Decode keystore
+        if: steps.get_tag.outputs.tag != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+
+      - name: Zipalign
+        if: steps.get_tag.outputs.tag != ''
+        run: |
+          APK_UNSIGNED=$(find apk -name "*.apk" | head -n 1)
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          "$BUILD_TOOLS/zipalign" -v -p 4 \
+          "$APK_UNSIGNED" \
+          "Devora-$TAG_NAME-aligned.apk"
+
+      - name: Sign with apksigner
+        if: steps.get_tag.outputs.tag != ''
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          TAG-NAME="${{ steps.get_tag.outputs.tag }}
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks release.keystore \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --out apk/Devora-$TAG-NAME \
+            apk/Devora-$TAG-NAME-aligned.apk
+
+      - name: Verify signature
+        if: steps.get_tag.outputs.tag != ''
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          TAG-NAME="${{ steps.get_tag.outputs.tag }}
+          "$BUILD_TOOLS/apksigner" verify --verbose apk/Devora-$TAG-NAME.apk
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f release.keystore
+
+      - name: Create GitHub Release
+        if: steps.get_tag.outputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          name: Devora ${{ steps.get_tag.outputs.tag }}
+          files: Devora-${{ steps.get_tag.outputs.tag }}.apk
+          generate_release_notes: true

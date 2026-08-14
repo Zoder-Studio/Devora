@@ -14,8 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.devora.core.ui.theme.DevoraSpacing
 
 @Composable
 fun NanoInstallScreen(
@@ -28,7 +28,7 @@ fun NanoInstallScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Install nano") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(DevoraSpacing.md)) {
             Text("nano is not installed in Devora's embedded engine yet.")
             Text(
                 "This runs: apt update && apt install -y nano",
@@ -40,10 +40,7 @@ fun NanoInstallScreen(
             ) {
                 Text(if (uiState.isInstalling) "Installing..." else "Install now")
             }
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
-            }
-            LazyColumn(modifier = Modifier.padding(top = 12.dp)) {
+            LazyColumn(modifier = Modifier.padding(top = DevoraSpacing.sm)) {
                 items(uiState.outputLines) { line ->
                     Text(line, style = MaterialTheme.typography.bodySmall)
                 }

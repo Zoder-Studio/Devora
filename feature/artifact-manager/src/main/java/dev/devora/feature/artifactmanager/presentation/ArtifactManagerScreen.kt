@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.devora.core.ui.components.DevoraEmptyState
+import dev.devora.core.ui.theme.DevoraSpacing
 import dev.devora.feature.artifactmanager.domain.model.Artifact
 
 @Composable
@@ -46,20 +48,18 @@ fun ArtifactManagerScreen(
         topBar = { TopAppBar(title = { Text("DEVORA — Artifacts") }) }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
-            }
             if (uiState.artifacts.isEmpty()) {
-                Text("No artifacts found. Run a build first.", modifier = Modifier.padding(16.dp))
-            }
-            LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                items(uiState.artifacts, key = { it.id }) { artifact ->
-                    ArtifactRow(
-                        artifact = artifact,
-                        isInstalling = uiState.installingArtifactId == artifact.id,
-                        onInstall = { viewModel.install(artifact) },
-                        onDelete = { viewModel.delete(artifact, projectRootPath) }
-                    )
+                DevoraEmptyState("No artifacts found. Run a build first.")
+            } else {
+                LazyColumn(modifier = Modifier.padding(horizontal = DevoraSpacing.md)) {
+                    items(uiState.artifacts, key = { it.id }) { artifact ->
+                        ArtifactRow(
+                            artifact = artifact,
+                            isInstalling = uiState.installingArtifactId == artifact.id,
+                            onInstall = { viewModel.install(artifact) },
+                            onDelete = { viewModel.delete(artifact, projectRootPath) }
+                        )
+                    }
                 }
             }
         }
@@ -84,7 +84,7 @@ private fun ArtifactRow(
                 "SHA-256: ${artifact.sha256.take(16)}...",
                 style = MaterialTheme.typography.labelSmall
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(DevoraSpacing.sm), modifier = Modifier.padding(top = 4.dp)) {
                 if (isInstalling) {
                     InstallingIndicator()
                     Text("Installing...", style = MaterialTheme.typography.bodySmall)

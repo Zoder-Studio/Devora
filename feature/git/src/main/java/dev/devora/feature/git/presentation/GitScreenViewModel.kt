@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.devora.core.common.result.DevoraResult
+import dev.devora.core.ui.snackbar.DevoraSnackbarController
+import dev.devora.core.ui.snackbar.DevoraSnackbarSeverity
 import dev.devora.feature.git.domain.model.GitStatusResult
 import dev.devora.feature.git.domain.usecase.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,8 +17,7 @@ import javax.inject.Inject
 data class GitScreenUiState(
     val status: GitStatusResult? = null,
     val isBusy: Boolean = false,
-    val outputLines: List<String> = emptyList(),
-    val errorMessage: String? = null
+    val outputLines: List<String> = emptyList()
 )
 
 @HiltViewModel
@@ -42,8 +43,8 @@ class GitScreenViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             when (val result = statusUseCase(projectRootPath)) {
-                is DevoraResult.Success -> _uiState.value = _uiState.value.copy(status = result.data, errorMessage = null)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Success -> _uiState.value = _uiState.value.copy(status = result.data)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -68,9 +69,13 @@ class GitScreenViewModel @Inject constructor(
             when (val result = commitUseCase(projectRootPath, message)) {
                 is DevoraResult.Success -> {
                     _uiState.value = _uiState.value.copy(isBusy = false)
+                    snackbarController.show("Committed", DevoraSnackbarSeverity.SUCCESS)
                     refresh()
                 }
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(isBusy = false, errorMessage = result.message)
+                is DevoraResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(isBusy = false)
+                    snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
+                }
             }
         }
     }
@@ -82,8 +87,8 @@ class GitScreenViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(outputLines = _uiState.value.outputLines + line)
             }
             _uiState.value = when (result) {
-                is DevoraResult.Success -> _uiState.value.copy(isBusy = false)
-                is DevoraResult.Failure -> _uiState.value.copy(isBusy = false, errorMessage = result.message)
+                is DevoraResult.Success -> snackbarController.show("Pushed", DevoraSnackbarSeverity.SUCCESS)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -95,8 +100,8 @@ class GitScreenViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(outputLines = _uiState.value.outputLines + line)
             }
             _uiState.value = when (result) {
-                is DevoraResult.Success -> { refresh(); _uiState.value.copy(isBusy = false) }
-                is DevoraResult.Failure -> _uiState.value.copy(isBusy = false, errorMessage = result.message)
+                is DevoraResult.Success -> { refresh(); snackbarController.show("Pulled", DevoraSnackbarSeverity.SUCCESS) }
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }

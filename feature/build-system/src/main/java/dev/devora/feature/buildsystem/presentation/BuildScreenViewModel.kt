@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.devora.core.common.result.DevoraResult
+import dev.devora.core.ui.snackbar.DevoraSnackbarController
+import dev.devora.core.ui.snackbar.DevoraSnackbarSeverity
 import dev.devora.feature.buildsystem.domain.model.BuildRun
 import dev.devora.feature.buildsystem.domain.usecase.ExportBuildLogUseCase
 import dev.devora.feature.buildsystem.domain.usecase.ReadBuildLogTailUseCase
@@ -18,15 +20,15 @@ import javax.inject.Inject
 data class BuildScreenUiState(
     val isRunning: Boolean = false,
     val currentRun: BuildRun? = null,
-    val logTail: List<String> = emptyList(),
-    val errorMessage: String? = null
+    val logTail: List<String> = emptyList()
 )
 
 @HiltViewModel
 class BuildScreenViewModel @Inject constructor(
     private val runGradleTaskUseCase: RunGradleTaskUseCase,
     private val readBuildLogTailUseCase: ReadBuildLogTailUseCase,
-    private val exportBuildLogUseCase: ExportBuildLogUseCase
+    private val exportBuildLogUseCase: ExportBuildLogUseCase,
+    private val snackbarController: DevoraSnackbarController
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BuildScreenUiState())
@@ -43,20 +45,26 @@ class BuildScreenViewModel @Inject constructor(
                         currentRun = run,
                         logTail = readBuildLogTailUseCase(run)
                     )
+                    snackbarController.show(
+                        text = if (run.status.name == "SUCCESS") "Build succeeded" else "Build failed",
+                        severity = if (run.status.name == "SUCCESS") DevoraSnackbarSeverity.SUCCESS else DevoraSnackbarSeverity.ERROR
+                    )
                 }
-                is DevoraResult.Failure -> _uiState.value = BuildScreenUiState(
-                    isRunning = false,
-                    errorMessage = result.message
-                )
+                is DevoraResult.Failure -> {
+                    _uiState.value = BuildScreenUiState(isRunning = false)
+                    snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
+                }
             }
         }
     }
 
     fun exportLog(destinationFile: File) {
         val run = _uiState.value.currentRun ?: return
-        when (val result = exportBuildLogUseCase(run, destinationFile)) {
-            is DevoraResult.Success -> { /* UI can show a confirmation via Snackbar in polish pass */ }
-            is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+        viewModelScope.launch {
+            when (val result = exportBuildLogUseCase(run, destinationFile)) {
+                is DevoraResult.Success -> snackbarController.show("Log exported", DevoraSnackbarSeverity.SUCCESS)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
+            }
         }
     }
 }

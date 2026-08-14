@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dev.devora.feature.accountsecurity.presentation.CreateDpatScreen
+import dev.devora.feature.accountsecurity.presentation.EmergencyRevokeScreen
 import dev.devora.feature.apkinspector.presentation.AabInspectorScreen
 import dev.devora.feature.apkinspector.presentation.ApkInspectorScreen
 import dev.devora.feature.artifactmanager.presentation.ArtifactManagerScreen
@@ -15,12 +17,18 @@ import dev.devora.feature.editor.domain.event.NanoLaunchEvent
 import dev.devora.feature.editor.domain.event.NanoLaunchEventBus
 import dev.devora.feature.editor.presentation.NanoInstallScreen
 import dev.devora.feature.filemanager.presentation.FileManagerScreen
+import dev.devora.feature.git.presentation.GitScreen
+import dev.devora.feature.github.presentation.GitHubLoginScreen
+import dev.devora.feature.github.presentation.PushToGitHubScreen
+import dev.devora.feature.pluginsystem.presentation.PluginListScreen
 import dev.devora.feature.projectmanager.presentation.ProjectListScreen
+import dev.devora.feature.secrets.presentation.SecretsScreen
 import dev.devora.feature.signing.presentation.CreateKeystoreScreen
 import dev.devora.feature.signing.presentation.SignApkScreen
 import dev.devora.feature.terminal.domain.event.TerminalLaunchEvent
 import dev.devora.feature.terminal.domain.event.TerminalLaunchEventBus
 import dev.devora.feature.terminal.presentation.EmbeddedTerminalScreen
+import dev.devora.feature.workflowengine.presentation.EnvironmentManagerScreen
 import dev.devora.feature.workflowengine.presentation.WorkflowRunScreen
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -34,11 +42,19 @@ object DevoraDestinations {
     const val NANO_INSTALL = "nano_install/{filePath}"
     const val BUILD_SCREEN = "build_screen/{rootPath}"
     const val WORKFLOW_RUN = "workflow_run/{rootPath}/{workflowFilePath}/{jobId}"
+    const val ENVIRONMENT_MANAGER = "environment_manager/{workflowId}"
     const val ARTIFACT_MANAGER = "artifact_manager/{rootPath}"
     const val APK_INSPECTOR = "apk_inspector/{apkFilePath}"
     const val AAB_INSPECTOR = "aab_inspector/{aabFilePath}"
     const val CREATE_KEYSTORE = "create_keystore/{destinationDir}"
     const val SIGN_APK = "sign_apk/{apkFilePath}"
+    const val GIT_SCREEN = "git_screen/{rootPath}"
+    const val GITHUB_LOGIN = "github_login"
+    const val PUSH_TO_GITHUB = "push_to_github/{rootPath}"
+    const val SECRETS_SCREEN = "secrets_screen/{rootPath}/{githubOwner}/{githubRepo}"
+    const val PLUGIN_LIST = "plugin_list"
+    const val CREATE_DPAT = "create_dpat"
+    const val EMERGENCY_REVOKE = "emergency_revoke"
 
     fun fileManagerRoute(rootPath: String) =
         "file_manager/${URLEncoder.encode(rootPath, "UTF-8")}"
@@ -60,6 +76,9 @@ object DevoraDestinations {
             "${URLEncoder.encode(workflowFilePath, "UTF-8")}/" +
             URLEncoder.encode(jobId, "UTF-8")
 
+    fun environmentManagerRoute(workflowId: String) =
+        "environment_manager/${URLEncoder.encode(workflowId, "UTF-8")}"
+
     fun artifactManagerRoute(rootPath: String) =
         "artifact_manager/${URLEncoder.encode(rootPath, "UTF-8")}"
 
@@ -74,14 +93,32 @@ object DevoraDestinations {
 
     fun signApkRoute(apkFilePath: String) =
         "sign_apk/${URLEncoder.encode(apkFilePath, "UTF-8")}"
+
+    fun gitScreenRoute(rootPath: String) =
+        "git_screen/${URLEncoder.encode(rootPath, "UTF-8")}"
+
+    fun pushToGitHubRoute(rootPath: String) =
+        "push_to_github/${URLEncoder.encode(rootPath, "UTF-8")}"
+
+    fun secretsScreenRoute(rootPath: String, githubOwner: String, githubRepo: String) =
+        "secrets_screen/${URLEncoder.encode(rootPath, "UTF-8")}/" +
+            "${URLEncoder.encode(githubOwner, "UTF-8")}/" +
+            URLEncoder.encode(githubRepo, "UTF-8")
 }
 
 @Composable
 fun DevoraNavHost(
     terminalLaunchEventBus: TerminalLaunchEventBus,
-    nanoLaunchEventBus: NanoLaunchEventBus
+    nanoLaunchEventBus: NanoLaunchEventBus,
+    initialDeepLinkPath: String? = null
 ) {
     val navController = rememberNavController()
+
+    LaunchedEffect(initialDeepLinkPath) {
+        initialDeepLinkPath?.let { path ->
+            navController.navigate(path)
+        }
+    }
 
     LaunchedEffect(Unit) {
         terminalLaunchEventBus.events.collectLatest { event ->
@@ -198,6 +235,16 @@ fun DevoraNavHost(
         }
 
         composable(
+            route = DevoraDestinations.ENVIRONMENT_MANAGER,
+            arguments = listOf(navArgument("workflowId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val workflowId = URLDecoder.decode(
+                backStackEntry.arguments?.getString("workflowId").orEmpty(), "UTF-8"
+            )
+            EnvironmentManagerScreen(workflowId = workflowId)
+        }
+
+        composable(
             route = DevoraDestinations.ARTIFACT_MANAGER,
             arguments = listOf(navArgument("rootPath") { type = NavType.StringType })
         ) { backStackEntry ->
@@ -248,6 +295,68 @@ fun DevoraNavHost(
                 backStackEntry.arguments?.getString("apkFilePath").orEmpty(), "UTF-8"
             )
             SignApkScreen(apkFilePath = apkFilePath)
+        }
+
+        composable(
+            route = DevoraDestinations.GIT_SCREEN,
+            arguments = listOf(navArgument("rootPath") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val rootPath = URLDecoder.decode(
+                backStackEntry.arguments?.getString("rootPath").orEmpty(), "UTF-8"
+            )
+            GitScreen(projectRootPath = rootPath)
+        }
+
+        composable(DevoraDestinations.GITHUB_LOGIN) {
+            GitHubLoginScreen(
+                onLoggedIn = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = DevoraDestinations.PUSH_TO_GITHUB,
+            arguments = listOf(navArgument("rootPath") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val rootPath = URLDecoder.decode(
+                backStackEntry.arguments?.getString("rootPath").orEmpty(), "UTF-8"
+            )
+            PushToGitHubScreen(projectRootPath = rootPath)
+        }
+
+        composable(
+            route = DevoraDestinations.SECRETS_SCREEN,
+            arguments = listOf(
+                navArgument("rootPath") { type = NavType.StringType },
+                navArgument("githubOwner") { type = NavType.StringType },
+                navArgument("githubRepo") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val rootPath = URLDecoder.decode(
+                backStackEntry.arguments?.getString("rootPath").orEmpty(), "UTF-8"
+            )
+            val githubOwner = URLDecoder.decode(
+                backStackEntry.arguments?.getString("githubOwner").orEmpty(), "UTF-8"
+            )
+            val githubRepo = URLDecoder.decode(
+                backStackEntry.arguments?.getString("githubRepo").orEmpty(), "UTF-8"
+            )
+            SecretsScreen(
+                projectRootPath = rootPath,
+                githubOwner = githubOwner,
+                githubRepo = githubRepo
+            )
+        }
+
+        composable(DevoraDestinations.PLUGIN_LIST) {
+            PluginListScreen()
+        }
+
+        composable(DevoraDestinations.CREATE_DPAT) {
+            CreateDpatScreen()
+        }
+
+        composable(DevoraDestinations.EMERGENCY_REVOKE) {
+            EmergencyRevokeScreen()
         }
     }
 }

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -15,8 +14,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.unit.dp
+import dev.devora.core.ui.components.DevoraLoadingState
+import dev.devora.core.ui.theme.DevoraSpacing
 import dev.devora.feature.workflowengine.domain.model.WorkflowStepResult
 import dev.devora.feature.workflowengine.domain.model.WorkflowStepStatus
 
@@ -36,12 +37,9 @@ fun WorkflowRunScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("DEVORA — Workflow: $jobId") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(DevoraSpacing.md)) {
             if (uiState.isRunning) {
-                CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
-            }
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+                DevoraLoadingState(label = "Running $jobId...")
             }
             LazyColumn {
                 items(uiState.runResult?.stepResults ?: emptyList()) { step ->
@@ -60,10 +58,12 @@ private fun WorkflowStepRow(step: WorkflowStepResult) {
         WorkflowStepStatus.SKIPPED -> MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurface
     }
-    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+    Column(modifier = Modifier.padding(vertical = 6.dp())) {
         Text("[${step.status}] ${step.stepName}", color = color, style = MaterialTheme.typography.bodyMedium)
         step.errorMessage?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
+
+private fun Int.dp() = androidx.compose.ui.unit.Dp(this.toFloat())

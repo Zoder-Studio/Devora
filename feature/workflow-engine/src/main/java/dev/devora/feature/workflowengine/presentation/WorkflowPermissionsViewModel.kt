@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.devora.core.common.result.DevoraResult
+import dev.devora.core.ui.snackbar.DevoraSnackbarController
+import dev.devora.core.ui.snackbar.DevoraSnackbarSeverity
 import dev.devora.feature.workflowengine.domain.model.WorkflowPermission
 import dev.devora.feature.workflowengine.domain.model.WorkflowPermissionEntry
 import dev.devora.feature.workflowengine.domain.repository.WorkflowPermissionRepository
@@ -14,13 +16,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class WorkflowPermissionsUiState(
-    val entries: List<WorkflowPermissionEntry> = emptyList(),
-    val errorMessage: String? = null
+    val entries: List<WorkflowPermissionEntry> = emptyList()
 )
 
 @HiltViewModel
 class WorkflowPermissionsViewModel @Inject constructor(
-    private val repository: WorkflowPermissionRepository
+    private val repository: WorkflowPermissionRepository,
+    private val snackbarController: DevoraSnackbarController
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WorkflowPermissionsUiState())
@@ -36,7 +38,7 @@ class WorkflowPermissionsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = repository.set(projectRootPath, workflowId, permission)) {
                 is DevoraResult.Success -> load(projectRootPath)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -45,7 +47,7 @@ class WorkflowPermissionsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = repository.remove(projectRootPath, workflowId)) {
                 is DevoraResult.Success -> load(projectRootPath)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }

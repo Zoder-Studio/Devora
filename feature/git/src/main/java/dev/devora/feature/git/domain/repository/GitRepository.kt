@@ -35,4 +35,6 @@ interface GitRepository {
     suspend fun pull(projectRootPath: String, remote: String, branch: String, onOutputLine: (String) -> Unit): DevoraResult<GitCommandOutput>
 
     suspend fun diff(projectRootPath: String, path: String?, staged: Boolean): DevoraResult<String>
+
+    suspend fun setRemote(projectRootPath: String, name: String, url: String): DevoraResult<Unit>
 }

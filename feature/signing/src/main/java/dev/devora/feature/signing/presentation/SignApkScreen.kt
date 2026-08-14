@@ -20,8 +20,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.compose.ui.unit.dp
+import dev.devora.core.ui.components.DevoraEmptyState
+import dev.devora.core.ui.theme.DevoraSpacing
 import dev.devora.feature.signing.domain.model.KeystoreEntry
 
 @Composable
@@ -39,43 +41,41 @@ fun SignApkScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("Sign APK") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(DevoraSpacing.md)) {
             Text(apkFilePath, style = MaterialTheme.typography.bodySmall)
 
-            Text("Select keystore", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
+            Text("Select keystore", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = DevoraSpacing.md))
             if (uiState.keystores.isEmpty()) {
-                Text("No keystores yet. Create one first.", style = MaterialTheme.typography.bodySmall)
-            }
-            LazyColumn {
-                items(uiState.keystores, key = { it.id }) { keystore ->
-                    KeystoreSelectRow(
-                        keystore = keystore,
-                        selected = keystore.id == selectedKeystoreId,
-                        onSelect = { selectedKeystoreId = keystore.id }
-                    )
+                DevoraEmptyState("No keystores yet. Create one first.")
+            } else {
+                LazyColumn {
+                    items(uiState.keystores, key = { it.id }) { keystore ->
+                        KeystoreSelectRow(
+                            keystore = keystore,
+                            selected = keystore.id == selectedKeystoreId,
+                            onSelect = { selectedKeystoreId = keystore.id }
+                        )
+                    }
                 }
             }
 
             Button(
                 onClick = { selectedKeystoreId?.let { viewModel.sign(apkFilePath, it) } },
                 enabled = selectedKeystoreId != null && !uiState.isSigning,
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier.padding(top = DevoraSpacing.md)
             ) {
                 Text(if (uiState.isSigning) "Signing..." else "Sign APK")
             }
 
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
-            }
             uiState.signedApkPath?.let {
                 Text(
                     "Signed APK: $it",
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = DevoraSpacing.sm)
                 )
             }
 
-            LazyColumn(modifier = Modifier.padding(top = 12.dp)) {
+            LazyColumn(modifier = Modifier.padding(top = DevoraSpacing.md)) {
                 items(uiState.outputLines) { line -> Text(line, style = MaterialTheme.typography.bodySmall) }
             }
         }
@@ -85,10 +85,10 @@ fun SignApkScreen(
 @Composable
 private fun KeystoreSelectRow(keystore: KeystoreEntry, selected: Boolean, onSelect: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp()),
         onClick = onSelect
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(12.dp())) {
             Text(
                 keystore.alias,
                 style = MaterialTheme.typography.titleSmall,
@@ -98,3 +98,5 @@ private fun KeystoreSelectRow(keystore: KeystoreEntry, selected: Boolean, onSele
         }
     }
 }
+
+private fun Int.dp() = androidx.compose.ui.unit.Dp(this.toFloat())

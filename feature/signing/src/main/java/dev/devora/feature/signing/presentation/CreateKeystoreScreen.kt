@@ -13,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,8 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import dev.devora.core.ui.theme.DevoraSpacing
 import dev.devora.feature.signing.domain.model.KeystoreCreationRequest
 
 @Composable
@@ -39,10 +40,14 @@ fun CreateKeystoreScreen(
     var validityYears by remember { mutableStateOf("25") }
     var commonName by remember { mutableStateOf("") }
 
+    LaunchedEffect(uiState.createdEntry) {
+        if (uiState.createdEntry != null) onCreated()
+    }
+
     Scaffold(
         topBar = { TopAppBar(title = { Text("Create Keystore") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(DevoraSpacing.md)) {
             OutlinedTextField(keystoreName, { keystoreName = it }, label = { Text("Keystore name") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(alias, { alias = it }, label = { Text("Alias") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
@@ -76,24 +81,12 @@ fun CreateKeystoreScreen(
                     )
                 },
                 enabled = !uiState.isCreating,
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier.padding(top = DevoraSpacing.md)
             ) {
                 Text(if (uiState.isCreating) "Creating..." else "Create Keystore")
             }
 
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
-            }
-            if (uiState.createdEntry != null) {
-                Text(
-                    "Keystore created successfully.",
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-                onCreated()
-            }
-
-            LazyColumn(modifier = Modifier.padding(top = 12.dp)) {
+            LazyColumn(modifier = Modifier.padding(top = DevoraSpacing.md)) {
                 items(uiState.outputLines) { line -> Text(line, style = MaterialTheme.typography.bodySmall) }
             }
         }

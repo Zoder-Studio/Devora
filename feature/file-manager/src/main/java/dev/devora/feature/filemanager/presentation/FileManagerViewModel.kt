@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.devora.core.common.result.DevoraResult
+import dev.devora.core.ui.snackbar.DevoraSnackbarController
+import dev.devora.core.ui.snackbar.DevoraSnackbarSeverity
 import dev.devora.feature.filemanager.domain.action.OpenFileInNanoAction
 import dev.devora.feature.filemanager.domain.action.OpenTerminalAtPathAction
 import dev.devora.feature.filemanager.domain.model.FileNode
@@ -24,8 +26,7 @@ data class FileManagerUiState(
     val parentPath: String? = null,
     val visibleEntries: List<FileNode> = emptyList(),
     val showHiddenFiles: Boolean = false,
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val isLoading: Boolean = false
 )
 
 @HiltViewModel
@@ -36,7 +37,8 @@ class FileManagerViewModel @Inject constructor(
     private val renameFileUseCase: RenameFileUseCase,
     private val deleteFileUseCase: DeleteFileUseCase,
     private val openTerminalAtPathAction: OpenTerminalAtPathAction,
-    private val openFileInNanoAction: OpenFileInNanoAction
+    private val openFileInNanoAction: OpenFileInNanoAction,
+    private val snackbarController: DevoraSnackbarController
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FileManagerUiState())
@@ -46,7 +48,7 @@ class FileManagerViewModel @Inject constructor(
 
     fun open(path: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true)
             when (val result = listDirectoryUseCase(path)) {
                 is DevoraResult.Success -> {
                     allEntries = result.data.entries
@@ -57,10 +59,10 @@ class FileManagerViewModel @Inject constructor(
                         visibleEntries = applyHiddenFilter(allEntries, _uiState.value.showHiddenFiles)
                     )
                 }
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = result.message
-                )
+                is DevoraResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
+                }
             }
         }
     }
@@ -89,7 +91,7 @@ class FileManagerViewModel @Inject constructor(
             val currentPath = _uiState.value.currentPath
             when (val result = createFileUseCase(currentPath, name)) {
                 is DevoraResult.Success -> open(currentPath)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -99,7 +101,7 @@ class FileManagerViewModel @Inject constructor(
             val currentPath = _uiState.value.currentPath
             when (val result = createDirectoryUseCase(currentPath, name)) {
                 is DevoraResult.Success -> open(currentPath)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -109,7 +111,7 @@ class FileManagerViewModel @Inject constructor(
             val currentPath = _uiState.value.currentPath
             when (val result = renameFileUseCase(path, newName)) {
                 is DevoraResult.Success -> open(currentPath)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -119,7 +121,7 @@ class FileManagerViewModel @Inject constructor(
             val currentPath = _uiState.value.currentPath
             when (val result = deleteFileUseCase(path)) {
                 is DevoraResult.Success -> open(currentPath)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }

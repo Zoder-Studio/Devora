@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.item
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -15,8 +14,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.unit.dp
+import dev.devora.core.ui.components.DevoraLoadingState
+import dev.devora.core.ui.theme.DevoraSpacing
 import dev.devora.feature.apkinspector.domain.model.ApkInspectionResult
 
 @Composable
@@ -33,11 +34,8 @@ fun ApkInspectorScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("APK Inspector") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            if (uiState.isLoading) CircularProgressIndicator()
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
-            }
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(DevoraSpacing.md)) {
+            if (uiState.isLoading) DevoraLoadingState(label = "Inspecting APK...")
             uiState.result?.let { result -> ApkInspectionContent(result) }
         }
     }
@@ -90,10 +88,12 @@ private fun ApkInspectionContent(result: ApkInspectionResult) {
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+    Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = DevoraSpacing.md, bottom = 4.dp()))
 }
 
 @Composable
 private fun InfoLine(label: String, value: String) {
     Text("$label: $value", style = MaterialTheme.typography.bodySmall)
 }
+
+private fun Int.dp() = androidx.compose.ui.unit.Dp(this.toFloat())

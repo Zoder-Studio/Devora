@@ -47,6 +47,12 @@ class DefaultGitRepository(
         return DevoraResult.Success(parsePorcelainV2(lines))
     }
 
+    override suspend fun setRemote(projectRootPath: String, name: String, url: String): DevoraResult<Unit> {
+        // "remote remove" may fail harmlessly if the remote doesn't exist yet — ignore that specific failure.
+        engineProvider.current().run(projectRootPath, "git remote remove '$name' 2>/dev/null; true", onOutputLine = {})
+        return engineProvider.current().run(projectRootPath, "git remote add '$name' '$url'", onOutputLine = {})
+    }
+
     private fun parsePorcelainV2(lines: List<String>): GitStatusResult {
         var branch: String? = null
         var ahead = 0

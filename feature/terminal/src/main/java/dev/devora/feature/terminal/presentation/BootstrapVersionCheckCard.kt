@@ -33,8 +33,7 @@ fun BootstrapVersionCheckCard(viewModel: BootstrapVersionCheckViewModel = hiltVi
                 if (result.isUpdateAvailable) {
                     if (showConfirmUpdate) {
                         Text(
-                            "Updating will wipe the current embedded engine (nano, SDK tooling, " +
-                                "anything installed inside it) and reinstall from scratch. Continue?",
+                            "Updating will wipe the current embedded engine and reinstall from scratch. Continue?",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -55,9 +54,6 @@ fun BootstrapVersionCheckCard(viewModel: BootstrapVersionCheckViewModel = hiltVi
             }
 
             uiState.progressMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            uiState.errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
 
             TextButton(onClick = { viewModel.checkForUpdate() }, enabled = !uiState.isChecking) {
                 Text(if (uiState.isChecking) "Checking..." else "Check for update")

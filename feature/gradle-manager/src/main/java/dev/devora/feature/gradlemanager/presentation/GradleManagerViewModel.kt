@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.devora.core.common.result.DevoraResult
+import dev.devora.core.ui.snackbar.DevoraSnackbarController
+import dev.devora.core.ui.snackbar.DevoraSnackbarSeverity
 import dev.devora.feature.gradlemanager.domain.model.GradleCacheInfo
 import dev.devora.feature.gradlemanager.domain.model.GradleWrapperInfo
 import dev.devora.feature.gradlemanager.domain.usecase.ClearGradleCacheUseCase
@@ -23,8 +25,7 @@ data class GradleManagerUiState(
     val cacheInfo: GradleCacheInfo? = null,
     val isOfflineMode: Boolean = false,
     val statusLines: List<String> = emptyList(),
-    val isBusy: Boolean = false,
-    val errorMessage: String? = null
+    val isBusy: Boolean = false
 )
 
 @HiltViewModel
@@ -34,7 +35,8 @@ class GradleManagerViewModel @Inject constructor(
     private val clearCacheUseCase: ClearGradleCacheUseCase,
     private val getDaemonStatusUseCase: GetGradleDaemonStatusUseCase,
     private val stopDaemonUseCase: StopGradleDaemonUseCase,
-    private val setOfflineModeUseCase: SetGradleOfflineModeUseCase
+    private val setOfflineModeUseCase: SetGradleOfflineModeUseCase,
+    private val snackbarController: DevoraSnackbarController
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GradleManagerUiState())
@@ -47,7 +49,7 @@ class GradleManagerViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = readWrapperInfoUseCase(rootPath)) {
                 is DevoraResult.Success -> _uiState.value = _uiState.value.copy(wrapperInfo = result.data)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
             when (val cacheResult = getCacheInfoUseCase()) {
                 is DevoraResult.Success -> _uiState.value = _uiState.value.copy(cacheInfo = cacheResult.data)
@@ -66,11 +68,12 @@ class GradleManagerViewModel @Inject constructor(
                         isBusy = false,
                         cacheInfo = (cacheResult as? DevoraResult.Success)?.data
                     )
+                    snackbarController.show("Cache cleared", DevoraSnackbarSeverity.SUCCESS)
                 }
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(
-                    isBusy = false,
-                    errorMessage = result.message
-                )
+                is DevoraResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(isBusy = false)
+                    snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
+                }
             }
         }
     }
@@ -81,9 +84,9 @@ class GradleManagerViewModel @Inject constructor(
             val result = getDaemonStatusUseCase(projectRootPath) { line ->
                 _uiState.value = _uiState.value.copy(statusLines = _uiState.value.statusLines + line)
             }
-            _uiState.value = when (result) {
-                is DevoraResult.Success -> _uiState.value.copy(isBusy = false)
-                is DevoraResult.Failure -> _uiState.value.copy(isBusy = false, errorMessage = result.message)
+            _uiState.value = _uiState.value.copy(isBusy = false)
+            if (result is DevoraResult.Failure) {
+                snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -94,9 +97,9 @@ class GradleManagerViewModel @Inject constructor(
             val result = stopDaemonUseCase(projectRootPath) { line ->
                 _uiState.value = _uiState.value.copy(statusLines = _uiState.value.statusLines + line)
             }
-            _uiState.value = when (result) {
-                is DevoraResult.Success -> _uiState.value.copy(isBusy = false)
-                is DevoraResult.Failure -> _uiState.value.copy(isBusy = false, errorMessage = result.message)
+            _uiState.value = _uiState.value.copy(isBusy = false)
+            if (result is DevoraResult.Failure) {
+                snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }
@@ -106,7 +109,7 @@ class GradleManagerViewModel @Inject constructor(
             val newValue = !_uiState.value.isOfflineMode
             when (val result = setOfflineModeUseCase(projectRootPath, newValue)) {
                 is DevoraResult.Success -> _uiState.value = _uiState.value.copy(isOfflineMode = newValue)
-                is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(errorMessage = result.message)
+                is DevoraResult.Failure -> snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
             }
         }
     }

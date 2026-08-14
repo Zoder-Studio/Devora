@@ -18,7 +18,6 @@ data class CmdlineToolsVersionUiState(
     val isChecking: Boolean = false,
     val isApplying: Boolean = false,
     val checkResult: CmdlineToolsVersionCheckResult? = null,
-    val errorMessage: String? = null,
     val appliedMessage: String? = null
 )
 
@@ -33,7 +32,7 @@ class CmdlineToolsVersionCheckViewModel @Inject constructor(
 
     fun checkForUpdate() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isChecking = true, errorMessage = null, appliedMessage = null)
+            _uiState.value = _uiState.value.copy(isChecking = true, appliedMessage = null)
             when (val result = checkRepository.checkForUpdate()) {
                 is DevoraResult.Success -> _uiState.value = _uiState.value.copy(
                     isChecking = false,
@@ -41,7 +40,7 @@ class CmdlineToolsVersionCheckViewModel @Inject constructor(
                 )
                 is DevoraResult.Failure -> _uiState.value = _uiState.value.copy(
                     isChecking = false,
-                    errorMessage = result.message
+                    snackbarController.show("Error: ${result.message}", DevoraSnackbarSeverity.ERROR)
                 )
             }
         }
@@ -60,7 +59,7 @@ class CmdlineToolsVersionCheckViewModel @Inject constructor(
      */
     fun applyPin(result: CmdlineToolsVersionCheckResult) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isApplying = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isApplying = true)
             val writeResult = versionStore.write(
                 PinnedCmdlineToolsVersion(
                     downloadUrl = result.latestDownloadUrl,
@@ -75,7 +74,7 @@ class CmdlineToolsVersionCheckViewModel @Inject constructor(
                 )
                 is DevoraResult.Failure -> _uiState.value.copy(
                     isApplying = false,
-                    errorMessage = writeResult.message
+                    snackbarController.show("Error: ${writeResult.message}", DevoraSnackbarSeverity.ERROR)
                 )
             }
         }
