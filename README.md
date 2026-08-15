@@ -23,22 +23,22 @@ Actively under construction, built in stages. Current progress:
 - [x] Stage 2 — Project system
 - [x] Stage 3 — Project File Manager
 - [x] Stage 4 — Terminal sandbox (dual engine: Termux app or embedded bootstrap)
-- [ ] Stage 5 — Nano integration
-- [ ] Stage 6 — SDK Manager
-- [ ] Stage 7 — Gradle Manager
-- [ ] Stage 8 — Build system
-- [ ] Stage 9 — Workflow system
-- [ ] Stage 10 — Per-workflow environment
-- [ ] Stage 11 — Workflow permissions
-- [ ] Stage 12 — Artifact Manager
-- [ ] Stage 13 — APK/AAB Inspector
-- [ ] Stage 14 — Signing
-- [ ] Stage 15 — Git
-- [ ] Stage 16 — GitHub integration
-- [ ] Stage 17 — Secrets
-- [ ] Stage 18 — Notifications
-- [ ] Stage 19 — Plugin system
-- [ ] Stage 20 — DPAT / account security
+- [x] Stage 5 — Nano integration
+- [x] Stage 6 — SDK Manager
+- [x] Stage 7 — Gradle Manager
+- [x] Stage 8 — Build system
+- [x] Stage 9 — Workflow system
+- [x] Stage 10 — Per-workflow environment
+- [x] Stage 11 — Workflow permissions
+- [x] Stage 12 — Artifact Manager
+- [x] Stage 13 — APK/AAB Inspector
+- [x] Stage 14 — Signing
+- [x] Stage 15 — Git
+- [x] Stage 16 — GitHub integration
+- [x] Stage 17 — Secrets
+- [x] Stage 18 — Notifications
+- [x] Stage 19 — Plugin system
+- [x] Stage 20 — DPAT / account security
 
 ## Requirements
 
@@ -61,20 +61,19 @@ Devora
 ├── project-manager     Project registry, .devora metadata
 ├── file-manager         Browse/create/rename/move/copy/delete
 ├── terminal             Dual-engine terminal (Termux app / embedded)
-├── sdk-manager          (planned)
-├── gradle-manager       (planned)
-├── build-system         (planned)
-├── workflow-engine      (planned)
-├── environment-manager  (planned)
-├── artifact-manager     (planned)
-├── apk-inspector        (planned)
-├── signing              (planned)
-├── git                  (planned)
-├── github               (planned)
-├── secrets              (planned)
-├── notifications        (planned)
-├── plugin-system        (planned)
-└── account-security     (planned)
+├── sdk-manager          For SDK System
+├── gradle-manager       Gradle managment
+├── build-system         Built-in build system
+├── workflow-engine      Built-in Workflows for user like Github
+├── artifact-manager     Artifact saver on sidebar
+├── apk-inspector        Inspect APK and Aab
+├── signing              Sign-In Methode
+├── git                  Git system
+├── github               Github integration
+├── secrets              Secrets managment
+├── notifications        Android Notification
+├── plugin-system        Plugin system for Devora
+└── account-security     Using DPAT and secure system
 ```
 
 Each feature module owns a clear boundary; modules do not reach into each
