@@ -35,7 +35,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(platform(libs.compose.bom))
-    implementation(libs.termux.terminal.view)
+    implementation(project(":vendor:terminal-view")) // built from vendored source, transitively includes :vendor:terminal-emulator — GPLv3
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.kotlinx.coroutines.android)

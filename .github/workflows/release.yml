@@ -12,6 +12,11 @@ jobs:
       contents: write
       actions: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
       - name: Download unreleased APK from Build Debug workflow
         uses: dawidd6/action-download-artifact@v6
         with:
